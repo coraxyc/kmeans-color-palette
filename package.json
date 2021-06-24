@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "build": "script.js"
+  },
+  "dependencies": {
+    "colorthief": "^2.3.2",
+    "skmeans": "^0.11.3"
+  },
+  "name": "color",
+  "version": "1.0.0",
+  "main": "script.js",
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
