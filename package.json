@@ -4,6 +4,11 @@
   },
   "dependencies": {
     "colorthief": "^2.3.2",
+    "got": "^11.8.2",
+    "image-js": "^0.32.0",
+    "jsdom": "^16.7.0",
+    "mmmagic": "^0.5.3",
+    "node-fetch": "^2.6.1",
     "skmeans": "^0.11.3"
   },
   "name": "color",
