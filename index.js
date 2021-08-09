@@ -41,20 +41,23 @@ window.addEventListener('DOMContentLoaded', (event) => {
       fillColorRow(colorObj, index, allColors);
     });
 
-    const updateAllButton = document.createElement('button');
-    updateAllButton.innerText = 'Update All';
-    updateAllButton.addEventListener('click', (e) => onAllRowUpdate(e, _idList));
-    referenceColorsDiv.append(updateAllButton);
+    const updateAllDomColorsButton = document.createElement('button');
+    updateAllDomColorsButton.innerText = 'Update All Dominant Colors';
+    updateAllDomColorsButton.addEventListener('click', (e) => onAllRowUpdateDomColors(e, colorObjs));
+    referenceColorsDiv.append(updateAllDomColorsButton);
+
+    const updateAllMainColorsButton = document.createElement('button');
+    updateAllMainColorsButton.innerText = 'Update All Main Colors';
+    updateAllMainColorsButton.addEventListener('click', (e) => onAllRowUpdateMainColors(e, _idList));
+    referenceColorsDiv.append(updateAllMainColorsButton);
 
     console.log('done');
   });
-
-
 });
 
-function fillColorRow({_id, imageId, url, mainRGB, matchedRGB}, index, allColors) {
-  const targetHex = rgbToHex(mainRGB);
-  const closestMatchedColorName = getClosestColorName(matchedRGB);
+function fillColorRow({_id, imageId, url, domRGB, mainRGB}, index, allColors) {
+  const targetHex = rgbToHex(domRGB);
+  const closestMatchedColorName = getClosestColorName(mainRGB);
   const colorRow = document.createElement('div');
   colorRow.id = _id;
   colorRow.classList.add('colorRow');
@@ -70,19 +73,14 @@ function fillColorRow({_id, imageId, url, mainRGB, matchedRGB}, index, allColors
   indexSpan2.innerText = imageId;
   colorRow.appendChild(indexSpan2);
 
-  const imageSvg = document.createElement('svg');
+  const imageSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   imageSvg.id = `image${_id}`;
-  imageSvg.setAttribute('width', '50');
-  imageSvg.setAttribute('height', '50');
-  imageSvg.style.paddingRight = '30px';
+  imageSvg.setAttribute('width', '30');
+  imageSvg.setAttribute('height', '30');
+  imageSvg.style.paddingRight = '15px';
 
-  const rect = document.createElement('rect');
-  rect.setAttribute('width', '50');
-  rect.setAttribute('height', '50');
-  rect.style.fill = targetHex;
-  rect.style.strokeWidth = 2;
-  // rect.style.stroke = 'rgb(255,255,255)';
-  imageSvg.appendChild(rect);
+  imageSvg.innerHTML =
+    `<rect width="30" height="30" style="fill:${targetHex};stroke-width:1;stroke:rgb(255,255,255);" />`
   colorRow.append(imageSvg);
 
   const poster = document.createElement('img');
@@ -96,34 +94,47 @@ function fillColorRow({_id, imageId, url, mainRGB, matchedRGB}, index, allColors
 
   const button = document.createElement('button');
   button.innerText = "Update"
-  button.addEventListener('click', (e) => onRowUpdate(e, _id));
+  button.addEventListener('click', (e) => onRowUpdateMainColor(e, _id));
   colorRow.appendChild(button);
 
   allColors.appendChild(colorRow);
 }
 
+const onAllRowUpdateDomColors = (e, colorObjs) => {
+  e.preventDefault();
+  console.log('updating dominant colors...');
+  console.log(colorObjs[0]);
+  colorObjs.map((colorObj) => {
+    const _id = colorObj._id;
+    const domColorHex = rgbToHex(colorObj.domRGB);
+    const url = `http://principle-gallery.ucsd.edu:8000/api/designs/${_id}`;
+    const params = JSON.stringify({dominantColor: domColorHex});
+    const http = new XMLHttpRequest();
+    http.open('PATCH', url);
+    http.setRequestHeader('Content-type', 'application/json');
+    http.send(params); // Make sure to stringify
+  });
+  console.log('done updating dominant colors');
+}
+
 /****/
-const onAllRowUpdate = (e, _idList) => {
+const onAllRowUpdateMainColors = (e, _idList) => {
   _idList.forEach((_id) => {
-    onRowUpdate(e, _id);
+    onRowUpdateMainColor(e, _id);
   });
 }
 
-const onRowUpdate = (e, _id) => {
+const onRowUpdateMainColor = (e, _id) => {
   e.preventDefault();
   console.log('updating row...');
   const colorHex = document.querySelector(`input[name="radio-${_id}"]:checked`).value;
   console.log(`${colorHex} is checked`);
   const url = `http://principle-gallery.ucsd.edu:8000/api/designs/${_id}`;
-  const params = JSON.stringify({dominantColor: colorHex});
+  const params = JSON.stringify({mainColor: colorHex});
   const http = new XMLHttpRequest();
   http.open('PATCH', url);
   http.setRequestHeader('Content-type', 'application/json');
   http.send(params); // Make sure to stringify
-  http.onload = function() {
-      // Do whatever with response
-      console.log(http.responsetext);
-  }
 }
 
 const createRefColorRadioButtons = (_id, checkedColorName, colorRow) => {
@@ -138,19 +149,13 @@ const createRefColorRadioButtons = (_id, checkedColorName, colorRow) => {
 
     const rowLabel = document.createElement('label');
     rowLabel.htmlFor = `radio-${_id}`;
-
-    const imageSvg = document.createElement('svg');
-    imageSvg.setAttribute('width', '50');
-    imageSvg.setAttribute('height', '50');
-    imageSvg.style.paddingRight = '40px';
-
-    const rect = document.createElement('rect');
-    rect.setAttribute('width', '50');
-    rect.setAttribute('height', '50');
-    rect.style.fill = colorHex;
-    rect.style.strokeWidth = 1;
-    // rect.style.stroke = 'rgb(0,0,0)';
-    imageSvg.appendChild(rect);
+    document.createElement('svg'); // xlms
+    const imageSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    imageSvg.setAttribute('width', '30');
+    imageSvg.setAttribute('height', '30');
+    imageSvg.style.paddingRight = '15px';
+    imageSvg.innerHTML = 
+      `<rect width="30" height="30" style="fill:${colorHex};stroke-width:1;stroke:rgb(0,0,0);" />`;
 
     rowLabel.appendChild(imageSvg);
 
@@ -182,7 +187,7 @@ async function getImage(id) {
       posterImage.onerror = reject;
       posterImage.src = url;
     }))
-    .then(({url, posterImage, width, height}) => {
+    .then(({url, posterImage}) => {
       return {url, posterImage}
     });
 }
@@ -222,23 +227,23 @@ async function getMainAndMatchedColors() {
     console.log('fulfilledImageList[1]');
     console.log(fulfilledImageList[1]);
     console.log(fulfilledImageList[1].value);
-    let mainColors = await Promise.allSettled(
+    let dominantColors = await Promise.allSettled(
       fulfilledImageList.map(async (promise) => {
-        const dominantColor = 
+        const domColor = 
         await colorThief.getColor(promise.value.posterImage);
         return { 
           _id: promise.value._id,
           imageId: promise.value.imageId,
           url: promise.value.url,
           image: promise.value.posterImage,
-          rgbArray: dominantColor
+          rgbArray: domColor
         };
       })
     );
 
-    console.log('mainColors: ');
-    console.log(mainColors);
-    const failedColorList = imageList
+    console.log('dominantColors: ');
+    console.log(dominantColors);
+    const failedColorList = dominantColors
       .filter(p => p != undefined && p.status === 'rejected')
       .map(p => p.value.imageId);
 
@@ -247,7 +252,7 @@ async function getMainAndMatchedColors() {
 
     console.log('finding main colors...');
   
-    const fulfilledMainColors = mainColors
+    const fulfilledDomColors = dominantColors
       .filter(p => p !== undefined && p.status === 'fulfilled')
       .map(p => ({
         _id: p.value._id,
@@ -260,14 +265,14 @@ async function getMainAndMatchedColors() {
         }
       }));
 
-    const matchedColors = fulfilledMainColors.map(({_id, imageId, url, rgb}) => {
+    const matchedColors = fulfilledDomColors.map(({_id, imageId, url, rgb}) => {
       const referenceRGB = getClosestColorName(rgb);
       return { 
         _id,
         imageId,
         url, 
-        mainRGB: rgb, 
-        matchedRGB: referenceColors[referenceRGB].rgb 
+        domRGB: rgb, 
+        mainRGB: referenceColors[referenceRGB].rgb 
       };
     });
     console.log(`${matchedColors.length} number of matched colors created`);
