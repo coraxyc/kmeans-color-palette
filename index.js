@@ -2,18 +2,18 @@ import ColorThief from './node_modules/colorthief/dist/color-thief.mjs';
 const colorThief = new ColorThief();
 
 const referenceColors = {
-  red: {rgb: { r: 226, g: 82, b: 65 }}, 
-  orange: {rgb: { r: 242, g: 156, b: 56 }}, 
-  yellow: {rgb: { r: 253, g: 235, b: 96 }}, 
-  green: {rgb: { r: 103, g: 172, b: 91 }}, 
-  lightBlue: {rgb: { r: 82, g: 185, b: 209 }}, 
-  blue: {rgb: { r: 69, g: 149, b: 236 }}, 
-  purple: {rgb: { r: 144, g: 52, b: 170 }},
-  pink: {rgb: { r: 215, g: 56, b: 100 }}, 
-  white: {rgb: { r: 255, g: 255, b: 255 }}, 
-  grey: {rgb: { r: 158, g: 158, b: 158 }}, 
-  black: {rgb: { r: 0, g: 0, b: 0 }}, 
-  brown: {rgb: { r: 89, g: 65, b: 57 }},
+  red: {rgb: { r: 226, g: 82, b: 65 }, hex: "#e25241"}, 
+  orange: {rgb: { r: 242, g: 156, b: 56 }, hex: "#f29c38"}, 
+  yellow: {rgb: { r: 253, g: 235, b: 96 }, hex: "#fdeb60"}, 
+  green: {rgb: { r: 103, g: 172, b: 91 }, hex: "#67ac5b"}, 
+  lightBlue: {rgb: { r: 82, g: 185, b: 209 }, hex: "#52b9d1"}, 
+  blue: {rgb: { r: 69, g: 149, b: 236 }, hex: "#4595ec"}, 
+  purple: {rgb: { r: 144, g: 52, b: 170 }, hex: "#9034aa"},
+  pink: {rgb: { r: 215, g: 56, b: 100 }, hex: "#d73864"}, 
+  white: {rgb: { r: 255, g: 255, b: 255 }, hex: "#ffffff"}, 
+  grey: {rgb: { r: 158, g: 158, b: 158 }, hex: "#9e9e9e"}, 
+  black: {rgb: { r: 0, g: 0, b: 0 }, hex: "#000000"}, 
+  brown: {rgb: { r: 89, g: 65, b: 57 }, hex: "#594139"},
 };
 
 window.addEventListener('DOMContentLoaded', (event) => {
@@ -51,9 +51,40 @@ window.addEventListener('DOMContentLoaded', (event) => {
     updateAllMainColorsButton.addEventListener('click', (e) => onAllRowUpdateMainColors(e, _idList));
     referenceColorsDiv.append(updateAllMainColorsButton);
 
+    const fetchMainColorsButton = document.createElement('button');
+    fetchMainColorsButton.innerText = 'Fetch Main Colors';
+    fetchMainColorsButton.addEventListener('click', (e) => onFetchAllColors(e, _idList));
+    referenceColorsDiv.append(fetchMainColorsButton);
+
     console.log('done');
   });
 });
+
+const onFetchAllColors = (e, _idList) => {
+  e.preventDefault();
+  console.log('fetching all colors...');
+  _idList.map(_id => {
+    fetch(`http://principle-gallery.ucsd.edu:8000/api/designs/${_id}`)
+      .then(res => res.text())
+      .then(text => JSON.parse(text))
+      .then(designBody => {
+        const mainColorHex = designBody.mainColor;
+        document.querySelector(`#radio-${_id}-${getColorName(mainColorHex)}`).checked = true;
+        // document.querySelector(`input[name="radio-${_id}"]:checked`).value = mainColor;
+      });
+  });
+  console.log('finished fetching');
+}
+
+const getColorName = (colorHex) => {
+  let refColorName = "";
+  Object.keys(referenceColors).forEach((colorName) => {
+    if (referenceColors[colorName].hex === colorHex) {
+      refColorName = colorName;
+    }
+  });
+  return refColorName;
+}
 
 function fillColorRow({_id, imageId, url, domRGB, mainRGB}, index, allColors) {
   const targetHex = rgbToHex(domRGB);
